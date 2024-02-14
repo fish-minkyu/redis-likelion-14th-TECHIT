@@ -25,6 +25,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+
 	// 1. 서버 인스턴스 세션 공유 설정
 	implementation 'org.springframework.session:spring-session-data-redis'
 
