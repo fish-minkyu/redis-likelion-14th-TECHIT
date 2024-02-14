@@ -1,0 +1,19 @@
+spring:
+  data:
+    redis:
+      host: redis-16039.c294.ap-northeast-1-2.ec2.cloud.redislabs.com
+      port: 16039
+      username: default
+      password: J0uBLQaXPnMTkS2BRsxZhJKoHP0WrNYs
+  datasource:
+    url: jdbc:h2:mem:test;
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    defer-datasource-initialization: true
+    show-sql: true
+
+  sql:
+    init:
+      mode: always
