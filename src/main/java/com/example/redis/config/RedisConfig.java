@@ -10,9 +10,14 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 
 @Configuration
-// 2. 서버 인스턴스 세션 공유 설정
+// @EnableRedisHttpSession
+// : 2. 서버 인스턴스 세션 공유 설정
+// maxInactiveIntervalInSeconds
+// : 세션을 유지할 시간 설정
 @EnableRedisHttpSession(maxInactiveIntervalInSeconds = 10)
 public class RedisConfig {
+
+  // PersonDto
   @Bean
   public RedisTemplate<String, PersonDto> personRedisTemplate(
     // RedisConnectionFactory: Redis와 연결해주는 객체
@@ -34,14 +39,13 @@ public class RedisConfig {
     return template;
   }
 
+  // ItemDto
   @Bean
   public RedisTemplate<Long, ItemDto> cacheRedisTemplate(
     RedisConnectionFactory connectionFactory
   ) {
     RedisTemplate<Long, ItemDto> template = new RedisTemplate<>();
     template.setConnectionFactory(connectionFactory);
-//    template.setKeySerializer(RedisSerializer.string());
-//    template.setValueSerializer(RedisSerializer.json());
     template.setDefaultSerializer(RedisSerializer.json());
     return template;
   }

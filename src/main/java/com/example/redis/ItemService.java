@@ -24,6 +24,8 @@ public class ItemService {
   private final SlowDataQuery repository;
   private final ItemRepository itemRepository;
 
+  // @Resource로 DI 해준다.
+  // RedisTemplate이 가지고 있는 ValueOperations를 바로 받아올 수 있다.
   @Resource(name = "cacheRedisTemplate")
   private ValueOperations<Long, ItemDto> cacheOps;
 
@@ -72,16 +74,11 @@ public class ItemService {
         .orElseThrow(() ->
           new ResponseStatusException(HttpStatus.NOT_FOUND));
       // 2-2. 있으면 캐시에 저장
-      // 3번째 인자로 만료 시간 설정 가능
+      // Duration.ofSeconds(): 3번째 인자로 만료 시간 설정 가능
       cacheOps.set(id, found, Duration.ofSeconds(10));
     }
 
     // 3. 최종적으로 데이터를 변환한다.
     return found;
-
-/*    return repository.findById(id)
-      .map(ItemDto::fromEntity)
-      .orElseThrow(() ->
-        new ResponseStatusException(HttpStatus.NOT_FOUND));*/
   }
 }
