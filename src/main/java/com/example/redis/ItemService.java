@@ -43,6 +43,7 @@ public class ItemService {
     return newDto;
   }
 
+  @Cacheable(cacheNames = "itemAllCache", key = "#root.methodName")
   public List<ItemDto> readAll() {
     return repository.findAll()
       .stream()
@@ -52,9 +53,12 @@ public class ItemService {
 
   // cacheName: 캐시 규칙을 지정하기 위한 이름
   // Key: 캐시를 저장할 때, 개별 데이터를 구분하기 위한 값
+  // root : 해당 메소드를 가르킴
+  // args[0]: 매개변수 중 첫번째
   @Cacheable(cacheNames = "itemCache", key = "#root.args[0]")
   public ItemDto readOne(Long id) {
-
+    // 캐시에서 데이터를 찾으면 메서드 자체를 호출하지 않는다.
+    log.info("cacheable readOne");
     return repository.findById(id)
       .map(ItemDto::fromEntity)
       .orElseThrow(() ->
@@ -65,6 +69,8 @@ public class ItemService {
     // Cache Aside를 RedisTemplate을 활용해 직접 구현해 보자.
     // 1. cacheOps에서 ItemDto를 찾아본다.
     // GET id
+    // +) getAndExpire(id, Duration.ofSeconds())
+    // : 가지고 올 때, 만료시간 설정
     ItemDto found = cacheOps.get(id);
     // 2. null일 경우 데이터베이스에서 조회한다.
     if (found == null) {
@@ -75,7 +81,7 @@ public class ItemService {
           new ResponseStatusException(HttpStatus.NOT_FOUND));
       // 2-2. 있으면 캐시에 저장
       // Duration.ofSeconds(): 3번째 인자로 만료 시간 설정 가능
-      cacheOps.set(id, found, Duration.ofSeconds(10));
+      cacheOps.set(id, found, Duration.ofSeconds(60));
     }
 
     // 3. 최종적으로 데이터를 변환한다.

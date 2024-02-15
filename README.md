@@ -34,6 +34,10 @@
 application.yaml에 Redis DB을 등록하고, Redis 콘솔창에서 Redis 자료형을 다뤄보았다.  
 그 다음, Spring Boot에서 Redis 사용하기 & Http와 Session & Redis Caching을 학습하였다.
 
+- CacheConfig
+- ItemService
+- itemDto
+
 ## 스팩
 
 - Spring Boot 3.2.2
@@ -269,26 +273,12 @@ public class RedisConfig {
 // SlowDataQuery를 사용하는 ItemService
 public class ItemService {
   private final SlowDataQuery repository;
-  private final ItemRepository itemRepository;
 
   // @Resource로 DI 해준다.
   // RedisTemplate이 가지고 있는 ValueOperations를 바로 받아올 수 있다.
   @Resource(name = "cacheRedisTemplate")
   private ValueOperations<Long, ItemDto> cacheOps;
-
-  // Write Through 방식
-  public ItemDto create(ItemDto dto) {
-    Item item = itemRepository.save(Item.builder()
-        .name(dto.getName())
-        .description(dto.getDescription())
-        .price(dto.getPrice())
-        .stock(dto.getStock())
-        .build());
-    ItemDto newDto = ItemDto.fromEntity(item);
-    // 결과를 반환하기 전 캐시에 한번 저장한다.
-    cacheOps.set(newDto.getId(), newDto, Duration.ofSeconds(60));
-    return newDto;
-  }
+  
 
   public List<ItemDto> readAll() {
     return repository.findAll()
