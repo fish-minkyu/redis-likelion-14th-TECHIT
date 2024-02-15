@@ -31,22 +31,39 @@
 <div>SlowDataQuery: 1초 지연 동작하는 DB</div>
 </details>
 
-application.yaml에 Redis DB을 등록하고, Redis 콘솔창에서 Redis 자료형을 다뤄보았다.  
-그 다음, Spring Boot에서 Redis 사용하기 & Http와 Session & Redis Caching을 학습하였다.
+1. `application.yaml`에 Redis DB을 등록 
+2. Redis 콘솔창에서 Redis 자료형을 다뤄봄  
+3. Spring Boot에서 Redis 사용하기
+4. Http와 Session & Redis Caching 사용하기
 
-- CacheConfig
-- ItemService
-- itemDto
-- ItemOrder
-- OrderRepository
-- SlowDataQuery
-- ItemController
-- ItemRepository
-- Item
-- RedisConfig
 
-=> @Cacheable, @CachePut  
-=> Sorted Set
+
+`2월 14일`
+<details>
+<summary><strong>Page</strong></summary>
+
+- @EnableCaching
+<div>CacheConfig</div>
+
+- @Cacheable, @CachePut
+<div>ItemService</div>
+
+- Sorted Set
+<div>RedisConfig</div>
+<div>CacheConfig</div>
+<div>Item</div>
+<div>ItemOrder</div>
+<div>itemDto</div>
+<div>ItemRepository</div>
+<div>OrderRepository</div>
+<div>SlowDataQuery</div>
+<div>ItemService</div>
+<div>ItemController</div>
+</details>
+
+1. `@EnableCaching`어노테이션으로 CacheConfig.java를 만들어 캐시 설정
+2. `@Cacheable`으로 CashAside & `@CachePut`으로 WriteThrough
+3. Sorted Set 구현
 
 ## 스팩
 
@@ -318,6 +335,125 @@ public class ItemService {
     return found;
   }
 }
+```
+</details>
+
+`02/14`
+<details>
+<summary><strong>02/14 - keyPoint</strong></summary>
+
+1. @EnableCaching
+[CacheConfig]()
+```java
+@Configuration
+// @EnableCaching
+// : 캐시를 어노테이션을 바탕으로 만들 수 있게 해주는 기능
+// (캐시를 어떻게 다룰지 결정하는 cacheManager 필요)
+@EnableCaching
+public class CacheConfig {
+  @Bean
+  public RedisCacheManager cacheManager(
+    // RedisConnectionFactory
+    // : 어떤 식으로 Redis와 연결할지 구성되어 있다.
+    RedisConnectionFactory redisConnectionFactory
+  ) {
+    // RedisCacheConfiguration
+    // : 캐시를 어떤 식으로 구성하고 싶은지에 대한 설정
+    RedisCacheConfiguration configuration = RedisCacheConfiguration
+      .defaultCacheConfig()
+      // null을 캐싱할 것인가 말 것인가?
+      .disableCachingNullValues()
+      // Time To Live(Ttl): 만료 시간
+      .entryTtl(Duration.ofSeconds(60))
+      // Key 접두사 설정 (객체를 구분하기 위해 필요)
+      .computePrefixWith(CacheKeyPrefix.simple())
+      // Value 직렬화 / 역직렬화 방법
+      .serializeValuesWith(
+        SerializationPair.fromSerializer(RedisSerializer.json())
+      );
+
+    // Cacheable의 cacheName을 바탕으로 적용되는 규칙을 바꿔보자
+    Map<String, RedisCacheConfiguration> configMap = new HashMap<>();
+    RedisCacheConfiguration itemAllConfig = RedisCacheConfiguration
+      .defaultCacheConfig()
+      .disableCachingNullValues()
+      .entryTtl(Duration.ofSeconds(10))
+      .serializeValuesWith(
+        SerializationPair.fromSerializer(RedisSerializer.java())
+      );
+    // 이름이 "itemAllCache"이면 itemAllConfig 설정 적용
+    configMap.put("itemAllCache", itemAllConfig);
+
+    // 실제 매니저를 등록하는 과정
+    return RedisCacheManager
+      // Connection 전달
+      .builder(redisConnectionFactory)
+      // 위에서 만든 설정을 기본값으로 설정
+      .cacheDefaults(configuration)
+      // 캐시 이름에 따라 설정을 따로 적용할 수 있다.
+      // Map으로 put하는 방법 외, cacheName과 설정 객체를 넣어서 적용시킬 수 있다.
+//      .withCacheConfiguration("itemAllCache", itemAllConfig)
+      .withInitialCacheConfigurations(configMap)
+      .build();
+  }
+}
+```
+
+2. @Cacheable & @CachePut
+[itemService.java]()
+```java
+  // @Cacheable
+  // : 캐시에서 데이터를 찾으면 메서드 자체를 호출하지 않는다.
+  // cacheName: 캐시 규칙을 지정하기 위한 이름
+  // Key: 캐시를 저장할 때, 개별 데이터를 구분하기 위한 값
+  // root : 해당 메소드를 가르킴
+  // methodName: 메소드 명
+  @Cacheable(cacheNames = "itemAllCache", key = "#root.methodName")
+  public List<ItemDto> readAll() {
+    return repository.findAll()
+      .stream()
+      .map(ItemDto::fromEntity)
+      .toList();
+  }
+
+  // args[0]: 매개변수 중 첫번째
+  @Cacheable(cacheNames = "itemCache", key = "#root.args[0]")
+  public ItemDto readOne(Long id) {
+    log.info("cacheable readOne");
+    return repository.findById(id)
+      .map(ItemDto::fromEntity)
+      .orElseThrow(() ->
+        new ResponseStatusException(HttpStatus.NOT_FOUND));
+  }
+```
+
+3. Sorted Set  
+RedisConfig & CacheConfig & Item & ItemOrder & ItemDto & ItemRepository & OrderRepository  
+SlowDataQuery & ItemService & ItemController
+
+[itemService]()
+```java
+  // 구매 메소드 (주문 이력 생성)
+  // + 주문 이력을 Sorted Set으로 Redis에 저장
+  public void purchase(Long id) {
+    ItemDto item = ItemDto.fromEntity(repository.purchase(id));
+    // Sorted Set에 추가
+    rankOps.incrementScore("soldRanks", item, 1);
+  }
+
+  public List<ItemDto> getMostSold() {
+    // LinkedHashSet으로 반환이 된다.
+    // LinkedHashSet: 순서가 존재하는 집합
+    Set<ItemDto> ranks = rankOps.reverseRange("soldRanks", 0, 9);
+    // null 처리
+    if (ranks == null) return Collections.emptyList();
+
+    log.info(String.valueOf(ranks.getClass()));
+
+    // Stream 방식
+//    return ranks.stream().toList();
+    return new LinkedList<>(ranks);
+  }
 ```
 </details>
 

@@ -69,6 +69,12 @@ public class ItemService {
     return newDto;
   }
 
+  // @Cacheable
+  // : 캐시에서 데이터를 찾으면 메서드 자체를 호출하지 않는다.
+  // cacheName: 캐시 규칙을 지정하기 위한 이름
+  // Key: 캐시를 저장할 때, 개별 데이터를 구분하기 위한 값
+  // root : 해당 메소드를 가르킴
+  // methodName: 메소드 명
   @Cacheable(cacheNames = "itemAllCache", key = "#root.methodName")
   public List<ItemDto> readAll() {
     return repository.findAll()
@@ -77,11 +83,6 @@ public class ItemService {
       .toList();
   }
 
-  // @Cacheable
-  // : 캐시에서 데이터를 찾으면 메서드 자체를 호출하지 않는다.
-  // cacheName: 캐시 규칙을 지정하기 위한 이름
-  // Key: 캐시를 저장할 때, 개별 데이터를 구분하기 위한 값
-  // root : 해당 메소드를 가르킴
   // args[0]: 매개변수 중 첫번째
   @Cacheable(cacheNames = "itemCache", key = "#root.args[0]")
   public ItemDto readOne(Long id) {
