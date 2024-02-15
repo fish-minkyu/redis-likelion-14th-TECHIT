@@ -45,6 +45,9 @@ application.yaml에 Redis DB을 등록하고, Redis 콘솔창에서 Redis 자료
 - Item
 - RedisConfig
 
+=> @Cacheable, @CachePut  
+=> Sorted Set
+
 ## 스팩
 
 - Spring Boot 3.2.2

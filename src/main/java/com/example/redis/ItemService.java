@@ -16,7 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -30,6 +33,8 @@ public class ItemService {
   // RedisTemplate이 가지고 있는 ValueOperations를 바로 받아올 수 있다.
   @Resource(name = "cacheRedisTemplate")
   private ValueOperations<Long, ItemDto> cacheOps;
+
+  // Sorted Set Operations을 RedisTemplate에서 꺼내왔다.
   @Resource(name = "rankTemplate")
   private ZSetOperations<String, ItemDto> rankOps;
 
@@ -111,7 +116,24 @@ public class ItemService {
   }
 
   // 구매 메소드 (주문 이력 생성)
+  // + 주문 이력을 Sorted Set으로 Redis에 저장
   public void purchase(Long id) {
     ItemDto item = ItemDto.fromEntity(repository.purchase(id));
+    // Sorted Set에 추가
+    rankOps.incrementScore("soldRanks", item, 1);
+  }
+
+  public List<ItemDto> getMostSold() {
+    // LinkedHashSet으로 반환이 된다.
+    // LinkedHashSet: 순서가 존재하는 집합
+    Set<ItemDto> ranks = rankOps.reverseRange("soldRanks", 0, 9);
+    // null 처리
+    if (ranks == null) return Collections.emptyList();
+
+    log.info(String.valueOf(ranks.getClass()));
+
+    // Stream 방식
+//    return ranks.stream().toList();
+    return new LinkedList<>(ranks);
   }
 }

@@ -42,4 +42,9 @@ public class ItemController {
   ) {
     itemService.purchase(id);
   }
+
+  @GetMapping("/sold-rank")
+  public List<ItemDto> ranks() {
+    return itemService.getMostSold();
+  }
 }
