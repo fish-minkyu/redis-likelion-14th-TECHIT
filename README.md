@@ -186,7 +186,7 @@ public class SimpleController {
 }
 ```
 4. 분산환경에서 Redis를 사용해 HttpSession 공유 설정
-build.gradle & RedisConfig & SessionController
+build.gradle & RedisConfig & SessionController  
 [build.gradle](build.gradle)
 ```yaml
 	// 1. 서버 인스턴스 세션 공유 설정
@@ -238,8 +238,8 @@ public class SessionController {
   }
 }
 ```
-5. Redis Caching
-RedisConfig & Item & ItemRepository & ItemDto & SlowDataQuery & ItemService & ItemController
+5. Redis Caching  
+RedisConfig & Item & ItemRepository & ItemDto & SlowDataQuery & ItemService & ItemController  
 [RedisConfig.java](src/main/java/com/example/redis/config/RedisConfig.java)
 ```java
 @Configuration
