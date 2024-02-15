@@ -12,6 +12,8 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import static org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 // @EnableCaching
@@ -40,12 +42,28 @@ public class CacheConfig {
         SerializationPair.fromSerializer(RedisSerializer.json())
       );
 
+    // Cacheable의 cacheName을 바탕으로 적용되는 규칙을 바꿔보자
+    Map<String, RedisCacheConfiguration> configMap = new HashMap<>();
+    RedisCacheConfiguration itemAllConfig = RedisCacheConfiguration
+      .defaultCacheConfig()
+      .disableCachingNullValues()
+      .entryTtl(Duration.ofSeconds(10))
+      .serializeValuesWith(
+        SerializationPair.fromSerializer(RedisSerializer.java())
+      );
+    // 이름이 "itemAllCache"이면 itemAllConfig 설정 적용
+    configMap.put("itemAllCache", itemAllConfig);
+
     // 실제 매니저를 등록하는 과정
     return RedisCacheManager
       // Connection 전달
       .builder(redisConnectionFactory)
       // 위에서 만든 설정을 기본값으로 설정
       .cacheDefaults(configuration)
+      // 캐시 이름에 따라 설정을 따로 적용할 수 있다.
+      // Map으로 put하는 방법 외, cacheName과 설정 객체를 넣어서 적용시킬 수 있다.
+//      .withCacheConfiguration("itemAllCache", itemAllConfig)
+      .withInitialCacheConfigurations(configMap)
       .build();
   }
 }

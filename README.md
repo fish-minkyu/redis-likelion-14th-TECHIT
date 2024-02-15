@@ -37,6 +37,13 @@ application.yaml에 Redis DB을 등록하고, Redis 콘솔창에서 Redis 자료
 - CacheConfig
 - ItemService
 - itemDto
+- ItemOrder
+- OrderRepository
+- SlowDataQuery
+- ItemController
+- ItemRepository
+- Item
+- RedisConfig
 
 ## 스팩
 

@@ -49,4 +49,17 @@ public class RedisConfig {
     template.setDefaultSerializer(RedisSerializer.json());
     return template;
   }
+
+  // 주문 정보 - Sorted Set
+  @Bean
+  // 문자열의 키를 통해 ItemDto를 넣을 것이고
+  // 자바를 통해 돌려받는 Value를 ItemDto로 기준을 할 것이다.
+  public RedisTemplate<String, ItemDto> rankTemplate(
+    RedisConnectionFactory connectionFactory
+  ) {
+    RedisTemplate<String, ItemDto> template = new RedisTemplate<>();
+    template.setConnectionFactory(connectionFactory);
+    template.setDefaultSerializer(RedisSerializer.json());
+    return template;
+  }
 }
